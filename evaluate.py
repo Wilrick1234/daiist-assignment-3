@@ -262,8 +262,10 @@ def agreement(judge: dict[str, dict]) -> dict:
         agree = sum(a == b for a, b in pairs) / n
         p_h, p_j = sum(a for a, _ in pairs) / n, sum(b for _, b in pairs) / n
         chance = p_h * p_j + (1 - p_h) * (1 - p_j)
-        kappa = (agree - chance) / (1 - chance) if chance < 1 else 1.0
-        out[field] = {"n": n, "agreement": round(agree, 3), "cohen_kappa": round(kappa, 3)}
+        # kappa is undefined when both raters give the same single grade to everything
+        kappa = round((agree - chance) / (1 - chance), 3) if chance < 1 else None
+        out[field] = {"n": n, "agreement": round(agree, 3), "cohen_kappa": kappa,
+                      "human_zeros": sum(1 for a, _ in pairs if a == 0), "judge_zeros": sum(1 for _, b in pairs if b == 0)}
     for i, h in human.items():
         if i in judge:
             rows.append({"id": i, "human_correct": h.get("correct"), "judge_correct": judge[i]["correct"],

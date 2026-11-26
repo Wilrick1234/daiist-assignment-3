@@ -196,7 +196,7 @@ class Agent:
         answer, retrieved = final_and_retrieved(result["messages"])
         problem = check_citations(answer, retrieved)
         if problem:
-            self.events.append({"guardrail": "citation_check", "attempt": 1, "problem": problem})
+            self.events.append({"guardrail": "citation_check", "attempt": 1, "problem": problem, "draft": answer})
             retry = HumanMessage(
                 f"Citation check failed: {problem}. Rewrite your answer using only passages returned by the "
                 f"search tool, with their exact [Source, Location] tags, searching again if you need to. "
