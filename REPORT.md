@@ -6,7 +6,7 @@
 
 ## Use case
 
-✏️ *Your words: who asks (e.g. the product team or founder of a startup shipping an AI feature that handles personal data in the EU), what they do with the answer, and why a confident wrong answer costs more than "The corpus does not cover this question."*
+The objective of this project is to develop a regulatory compliance assistant for entrepreneurs, product managers and companies that need to understand European regulations when developing digital products or implementing AI solutions. Users can ask practical questions about their business activities to determine their obligations under the GDPR, the AI Act and the ePrivacy Directive. A confident but incorrect answer could have significant financial and legal consequences, as Article 83 of the GDPR establishes fines of up to €20 million or 4% of annual worldwide turnover, while Article 99 of the AI Act establishes fines of up to €35 million or 7% of annual worldwide turnover for certain infringements. Beyond financial penalties, incorrect information could lead to reputational damage, operational disruptions and unnecessary compliance costs. Therefore, I believe that refusing to answer a question when there is insufficient evidence is preferable to providing a misleading answer, as consulting a legal professional is considerably less costly than making an incorrect compliance decision.
 
 ## Corpus
 
@@ -34,7 +34,7 @@ The binding text (articles and annexes, without recitals) of three EU laws. Reci
 
 ## Test set
 
-✏️ *Your words: how you wrote the questions.*
+My initial test set focused exclusively on the GDPR, but I subsequently redesigned it to cover all three regulations and better reflect the intended use case of the agent. I selected articles based on their relevance to practical business decisions, including data collection, consent, automated decision-making, AI risk classification and electronic communications. I also included questions requiring information from multiple articles and unanswerable questions to evaluate whether the agent could recognize the limitations of its knowledge rather than generate unsupported answers. Question 31 was added to extend the original evaluation and provide an additional test of the agent's behaviour.
 
 31 questions in `eval/questions.csv`: **18 single, 6 multi, 7 unanswerable**. q31 (cookie banners in France) was added for the add-document demo: it is close to the corpus's topic but not settled by it. Expected passages: 13 in the GDPR, 12 in the AI Act, 6 in the ePrivacy Directive. The column `original_location` keeps the precise pinpoints (e.g. `Article 5(1)(f)`); hit rates are measured at article level.
 
@@ -139,28 +139,90 @@ Correct: 24 / 24 answerable. Unsupported: 0 (judge), 1 (my grades: q21). Correct
 | Correct | 29 / 29 (100%) | undefined (both gave 1 everywhere) | 0 | 0 |
 | Supported | 28 / 29 (96.6%) | 0.00 | 1 (q21) | 0 |
 
-κ is 0 for support even with 96.6% agreement because the judge never gave a 0, so it agrees no better than chance on the one case that matters. Our only disagreement is q21. ✏️ *Your words: why you graded q21 unsupported. (Facts: the agent cited GDPR Article 22, GDPR Article 35 and AI Act Article 14, and all three were retrieved. The Article 35 passage, paragraphs 1–5, includes the DPIA and data-protection-officer text.)*
+κ is 0 for support even with 96.6% agreement because the judge never gave a 0, so it agrees no better than chance on the one case that matters. Our only disagreement is q21.
+
+The final evaluation consisted of 31 questions, combining automated code checks, an LLM judge following a predefined evaluation rubric, and my own manual assessment of 29 responses.
+
+Although the LLM judge considered all evaluated responses correct and supported, I disagreed with its assessment of Question 21, which concerned automated loan rejection.
+
+I considered the answer correct in its general interpretation of the GDPR but unsupported in part because it generalized the safeguards described in Article 22(3) to all exceptions to the restrictions on automated decision-making. More specifically, Article 22(3) establishes these particular safeguards for the exceptions relating to contractual necessity and explicit consent under Article 22(2)(a) and Article 22(2)(c). The exception based on authorization by law is addressed differently.
+
+I therefore assigned the response a correctness score of 1 but a support score of 0. I decided to maintain my original grade despite the disagreement with the LLM judge because, in a legal compliance context, the distinction between what legislation explicitly states and what an agent infers is particularly important.
+
+This disagreement also demonstrates why an automated judge should not be considered a perfect substitute for human evaluation.
 
 ## Failures
 
-✏️ *Your analysis. Facts to work from:*
+✏️ *Still to add: the template asks for failed questions **by cause, with counts**, using the five causes (retrieval miss, wrong answer from the right passage, unsupported claim, wrong refusal, bad test question). Add one line or a small table with your counts.*
 
-- *The judge found 0 failures; you found 1 (q21, support).*
-- *q26, q27 and q30 were refused without any search: the model judged them off-topic by itself. That's the right outcome, but it didn't come from checking the corpus.*
-- *All 24 answerable questions had an expected passage in the top 5, and all 31 passed the code checks. Six of the seven unanswerable questions ask about salaries, vendor prices, an auditor's fee, a banner approval code and course ratings; q31 is the one close to the corpus's topic.*
-- *In the demo's "after" answer, every citation is valid, but two details are not in the CNIL text: the example of a "Refuse All" button next to "Accept All", and "routinely" issuing sanctions. The citation check verifies labels, not content.*
-- *The citation check wrongly blocked the add-document confirmation (see Harness and guardrails).*
-- *Causes to use: retrieval miss, wrong answer from the right passage, unsupported claim, wrong refusal, bad test question. Say what to fix first.*
+Despite the strong evaluation results, I identified several weaknesses that suggest the system is not yet sufficiently reliable for unrestricted real-world use.
+
+#### 6.1. Question 21 – Unsupported generalization
+
+The first issue was the agent's interpretation of Article 22 of the GDPR. Although it retrieved relevant information and provided a broadly correct answer, it extended the scope of a legal provision beyond what the cited text explicitly supported.
+
+I would classify this as a generation and grounding failure rather than a retrieval failure. The relevant information was available, but the agent did not interpret its precise legal scope correctly.
+
+#### 6.2. Refusals without retrieval
+
+Three questions were refused without the agent performing a search. Although these refusals were accepted by the evaluation, the agent reached its conclusion without consulting the corpus.
+
+I consider this a tool-use and agent reasoning weakness rather than an observed incorrect answer. The agent may have correctly identified that these questions were outside its scope, but the same behaviour could cause it to incorrectly refuse an answerable question in the future.
+
+I would improve the system prompt by requiring at least one retrieval attempt before refusing substantive regulatory questions.
+
+#### 6.3. Unsupported information after document indexing
+
+During the demonstration, the agent's answer after adding the CNIL document introduced two details that were not present in the document.
+
+This represents a generation and grounding failure. The agent appears to have supplemented the retrieved information with additional knowledge or assumptions rather than limiting itself to what could be verified from the corpus.
+
+In a conventional chatbot, additional context may be useful. However, in a regulatory compliance assistant, unsupported information creates unnecessary legal risk, even when it happens to be factually correct.
+
+#### 6.4. Citation validation failure
+
+The citation verification mechanism incorrectly blocked a confirmation message. This occurred because the citation requirement was applied to a response that did not contain a substantive regulatory claim.
+
+I would classify this as a validation or guardrail failure. The mechanism itself was useful, but its implementation was too restrictive.
+
+A better approach would distinguish between substantive regulatory answers, which require citations, and operational messages, such as document indexing confirmations, which do not.
+
+#### 6.5. Reliability of the evaluation
+
+Although the LLM judge reported perfect results, I do not believe that this proves the system is entirely reliable. The test set contains only 31 questions, and the questions were designed around a known and relatively limited corpus.
+
+Furthermore, the disagreement on Question 21 demonstrates that the evaluation process itself has limitations. An answer can appear correct to an automated judge while containing subtle but important legal inaccuracies.
+
+To improve the evaluation, I would introduce more complex questions involving ambiguous scenarios, exceptions to general rules, interactions between multiple regulations, misleading assumptions and questions that are only partially answerable from the corpus.
+
+My first priority would be to improve answer grounding and citation verification. A system that retrieves the correct information but generates unsupported legal conclusions can still create considerable risk for its users.
 
 ## Decision
 
-✏️ *Your words: would you let users rely on it, for what, and with which safeguard?*
+Based on the results, I would allow users to use the agent as a preliminary regulatory research assistant, but I would not recommend relying on it as the sole source of legal advice.
+
+I would trust the system for relatively straightforward questions, such as identifying relevant articles, retrieving explicit regulatory requirements, explaining general obligations and locating information within the three regulations.
+
+However, I would not rely on it for complex legal interpretations, decisions involving exceptions to legislation, determining whether a specific company is fully compliant, or questions requiring information outside the available corpus.
+
+Before deploying the system, I would introduce the following safeguards:
+
+- Require citations for all substantive legal claims.
+- Require retrieval before refusing substantive regulatory questions.
+- Clearly communicate when information is incomplete or uncertain.
+- Distinguish between legal research assistance and professional legal advice.
+- Require human verification for high-risk compliance decisions.
+- Regularly update the corpus and expand the evaluation dataset.
+
+From an operational perspective, the system is efficient, with an average consumption of approximately 3,400 tokens and a response time of around three seconds per question. This makes it suitable for preliminary research and repeated use.
+
+Ultimately, I believe the main challenge is not reducing the cost or response time but ensuring that every legal claim is sufficiently supported. The system's value comes from making regulatory information more accessible while reducing research time, without creating a false sense of legal certainty.
 
 Cost and latency per question (31 questions, `gemini-3.5-flash-lite` free tier): on average **3,405 input + 187 output tokens**, **3.1 s** (median 2.4 s), 0.9 searches. Indexing cost 664 embeddings, one time; queries cost one embedding each, cached in `index/query_cache.json`.
 
 ## AI use
 
-✏️ *Check and complete.* I used Claude (Anthropic) throughout:
+I used Claude (Anthropic) throughout:
 - **Code**: it wrote `index.py`, `retrieval.py`, `server.py`, `agent.py`, `evaluate.py` and the subagent file, and ran the indexing and evaluation.
 - **Corpus**: it found and parsed the corpus.
 - **Tools**: it built the corpus reader and grading pages I used.
@@ -175,3 +237,5 @@ I made the decisions, choosing among options Claude laid out:
 - the citation-check guardrail.
 
 I wrote the test questions, the `AGENTS.md` rules, the judge rubric, my grades, the failure analysis and the decision.
+
+I used generative AI to review the accuracy, completeness, structure and clarity of my report. AI also helped me articulate the limitations identified during the evaluation and organize my failure analysis. The technical results are based on the project experiments and evaluation, while the final assessment and deployment decision reflect my own judgment.
