@@ -28,3 +28,4 @@
 {"id": "q28", "correct": 1, "supported": 1, "reason": "The assistant correctly identified that the question is unanswerable based on the provided corpus and used the required refusal phrase.", "model": "gemini-3.1-flash-lite"}
 {"id": "q29", "correct": 1, "supported": 1, "reason": "The question is unanswerable based on the provided corpus, and the assistant correctly provided the required refusal phrase.", "model": "gemini-3.1-flash-lite"}
 {"id": "q30", "correct": 1, "supported": 1, "reason": "The assistant correctly identified that the question is unanswerable based on the provided corpus and used the required refusal phrase.", "model": "gemini-3.1-flash-lite"}
+{"id": "q31", "correct": 1, "supported": 1, "reason": "The assistant correctly identified that the provided corpus does not contain information regarding specific French regulatory requirements for cookie banners.", "model": "gemini-3.1-flash-lite"}

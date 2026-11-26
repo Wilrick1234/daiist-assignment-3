@@ -29,3 +29,4 @@ q27,We're choosing a cloud provider. Which vendor charges the lowest price for s
 q28,We're preparing a privacy audit. What exact fee will our chosen external auditor charge?,unanswerable,,,The corpus does not cover this question.,
 q29,We're launching a cookie banner in France. What exact approval code will the French regulator assign to our particular banner?,unanswerable,,,The corpus does not cover this question.,
 q30,We're training our staff on AI. Which commercial training course has the highest customer satisfaction rating this month?,unanswerable,,,The corpus does not cover this question.,
+q31,We're launching a cookie banner in France. Does the French regulator require refusing cookies to be as easy as accepting them?,unanswerable,,,The corpus does not cover this question.,

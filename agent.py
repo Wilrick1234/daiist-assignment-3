@@ -194,7 +194,14 @@ class Agent:
             return (last.text.strip() if last else ""), retrieved
 
         answer, retrieved = final_and_retrieved(result["messages"])
-        problem = check_citations(answer, retrieved)
+        # A request to add a document gets a confirmation, not a legal answer, so it has
+        # nothing to cite. (Found in the add-document demo: the check turned the
+        # confirmation into a refusal.)
+        acted = any(isinstance(m, AIMessage) and any(c["name"] == "add_document" for c in m.tool_calls)
+                    for m in result["messages"])
+        problem = None if acted else check_citations(answer, retrieved)
+        if acted:
+            self.events.append({"guardrail": "citation_check", "skipped": "the run added a document"})
         if problem:
             self.events.append({"guardrail": "citation_check", "attempt": 1, "problem": problem, "draft": answer})
             retry = HumanMessage(

@@ -36,7 +36,7 @@ The binding text (articles and annexes, without recitals) of three EU laws. Reci
 
 ✏️ *Your words: how you wrote the questions.*
 
-30 questions in `eval/questions.csv`: **18 single, 6 multi, 6 unanswerable**. Expected passages: 13 in the GDPR, 12 in the AI Act, 6 in the ePrivacy Directive. The column `original_location` keeps the precise pinpoints (e.g. `Article 5(1)(f)`); hit rates are measured at article level.
+31 questions in `eval/questions.csv`: **18 single, 6 multi, 7 unanswerable**. q31 (cookie banners in France) was added for the add-document demo: it is close to the corpus's topic but not settled by it. Expected passages: 13 in the GDPR, 12 in the AI Act, 6 in the ePrivacy Directive. The column `original_location` keeps the precise pinpoints (e.g. `Article 5(1)(f)`); hit rates are measured at article level.
 
 Examples:
 
@@ -84,7 +84,12 @@ Subagent `.claude/agents/corpus-researcher.md` (tools: `mcp__corpus__search` onl
 
 **Already indexed** (policy chosen: skip if identical, replace if changed): `add_document` hashes the file. If the same content is already in the index, it embeds nothing and says so. If a document with the same name but different content exists, its old chunks are deleted and the new version is embedded. A file can never replace one of the three base laws: it is renamed "… (added)" instead.
 
-⏳ *Before/after demo: filled in after the demo run.*
+**Demo** (full transcript in `eval/before_after.md`):
+
+- **Unanswerable question q31**: "We're launching a cookie banner in France. Does the French regulator require refusing cookies to be as easy as accepting them?" The corpus requires consent for cookies (ePrivacy, Article 5(3)) and makes *withdrawing* consent as easy as giving it (GDPR, Article 7(3)), but says nothing about the French regulator or the *refuse* option.
+- **Before**: one search ("cookie banner refuse easy accept France ePrivacy GDPR"), then "The corpus does not cover this question."
+- **Document added**: the CNIL's news item of 14 December 2021, "Refusing cookies should be as easy as accepting them: the CNIL continues its action and issues new orders", saved as `extra_docs/CNIL_cookie_refusal_2021.md`. The agent asked `Approve? [y/N]`, I answered `y`, and 2 chunks were embedded. Asked to add it a second time, the tool embedded nothing and said it was already in the index.
+- **After**: "Yes. The French data protection regulator (the CNIL) actively enforces the requirement that refusing cookies must be as easy as accepting them [CNIL cookie refusal 2021, § Refusing cookies should be as easy as accepting them…]", followed by the CNIL's findings (cookies set before consent, refusal not effective) and the possible fines of up to 2% of annual worldwide turnover, all cited to the new document.
 
 ## Harness and guardrails
 
@@ -98,34 +103,36 @@ Subagent `.claude/agents/corpus-researcher.md` (tools: `mcp__corpus__search` onl
 
 **Extra guardrail, citation check**: after the agent answers, the harness parses every `[Source, Location]` tag and compares it with the tags returned by `search` in that run (`Article 6(1)(b)` counts as `Article 6`). If a tag was not retrieved, or a non-refusal answer has no tag, the agent gets one retry with the problem spelled out; if it fails again, the harness replaces the answer with the refusal.
 
-**One case where it fired** (`eval/guardrail_case.json`): asked "What does GDPR Recital 47 say about direct marketing as a legitimate interest?", which is not covered because recitals are not indexed, the first draft had no citation tag. The guardrail sent it back, and the retry answered "The corpus does not cover this question." In the 30-question evaluation it never fired: every answer passed on the first try.
+**One case where it fired** (`eval/guardrail_case.json`): asked "What does GDPR Recital 47 say about direct marketing as a legitimate interest?", which is not covered because recitals are not indexed, the first draft had no citation tag. The guardrail sent it back, and the retry answered "The corpus does not cover this question." In the 31-question evaluation it never fired: every answer passed on the first try.
+
+**A flaw found in the demo**: when the agent was asked to add a document, its confirmation ("The document … has been successfully added") has nothing to cite, so the check replaced it with the refusal, even though the document had been added. The check now skips runs that call `add_document`.
 
 ## Evaluation
 
-**Code checks** (`evaluate.py`, all 30 questions):
+**Code checks** (`evaluate.py`, all 31 questions):
 
 | Check | Result |
 |---|---|
 | Citation tags all retrieved in that run (non-refusals) | 24 / 24 |
 | Answer cites an expected article (answerable) | 24 / 24 |
 | Expected passage among the retrieved results (answerable) | 24 / 24 |
-| Refused exactly when unanswerable | 30 / 30 |
-| Refusal text exactly "The corpus does not cover this question." | 6 / 6 |
+| Refused exactly when unanswerable | 31 / 31 |
+| Refusal text exactly "The corpus does not cover this question." | 7 / 7 |
 | Citation guardrail fired | 0 |
 
 **Judge**: `gemini-3.1-flash-lite`, a different model from the agent, using the rubric in `eval/rubric.md` (correctness and support graded separately, 0 or 1, no partial credit for multi questions, exact-refusal rule for unanswerable questions). It gets the question, its type, the expected answer and locations, every retrieved passage and the answer.
 
 | Questions | n | Mean correctness | Mean support | Strict pass |
 |---|---|---|---|---|
-| All | 30 | 1.00 | 1.00 | 1.00 |
+| All | 31 | 1.00 | 1.00 | 1.00 |
 | Single | 18 | 1.00 | 1.00 | 1.00 |
 | Multi | 6 | 1.00 | 1.00 | 1.00 |
 | Answerable (single + multi) | 24 | 1.00 | 1.00 | 1.00 |
-| Unanswerable | 6 | 1.00 | 1.00 | 1.00 |
+| Unanswerable | 7 | 1.00 | 1.00 | 1.00 |
 
-Correct: 24 / 24 answerable. Unsupported: 0 (judge), 1 (my grades: q21). Correct refusals: 6 / 6. Wrong refusals: 0. Missed refusals: 0.
+Correct: 24 / 24 answerable. Unsupported: 0 (judge), 1 (my grades: q21). Correct refusals: 7 / 7. Wrong refusals: 0. Missed refusals: 0.
 
-**Agreement with my grades** (29 questions graded in `eval/human_labels.csv` before reading the judge's verdicts):
+**Agreement with my grades** (29 questions graded in `eval/human_labels.csv` before reading the judge's verdicts; q25 and q31 not graded by me):
 
 | Grade | Agreement | Cohen's κ | My zeros | Judge zeros |
 |---|---|---|---|---|
@@ -140,14 +147,16 @@ Correct: 24 / 24 answerable. Unsupported: 0 (judge), 1 (my grades: q21). Correct
 
 - *The judge found 0 failures; you found 1 (q21, support).*
 - *q26, q27 and q30 were refused without any search: the model judged them off-topic by itself. That's the right outcome, but it didn't come from checking the corpus.*
-- *All 24 answerable questions had an expected passage in the top 5, and all 30 passed the code checks. The six unanswerable questions ask about salaries, vendor prices, an auditor's fee, a banner approval code and course ratings.*
+- *All 24 answerable questions had an expected passage in the top 5, and all 31 passed the code checks. Six of the seven unanswerable questions ask about salaries, vendor prices, an auditor's fee, a banner approval code and course ratings; q31 is the one close to the corpus's topic.*
+- *In the demo's "after" answer, every citation is valid, but two details are not in the CNIL text: the example of a "Refuse All" button next to "Accept All", and "routinely" issuing sanctions. The citation check verifies labels, not content.*
+- *The citation check wrongly blocked the add-document confirmation (see Harness and guardrails).*
 - *Causes to use: retrieval miss, wrong answer from the right passage, unsupported claim, wrong refusal, bad test question. Say what to fix first.*
 
 ## Decision
 
 ✏️ *Your words: would you let users rely on it, for what, and with which safeguard?*
 
-Cost and latency per question (30 questions, `gemini-3.5-flash-lite` free tier): on average **3,401 input + 193 output tokens**, **3.0 s** (median 2.4 s), 0.9 searches. Indexing cost 664 embeddings, one time; queries cost one embedding each, cached in `index/query_cache.json`.
+Cost and latency per question (31 questions, `gemini-3.5-flash-lite` free tier): on average **3,405 input + 187 output tokens**, **3.1 s** (median 2.4 s), 0.9 searches. Indexing cost 664 embeddings, one time; queries cost one embedding each, cached in `index/query_cache.json`.
 
 ## AI use
 
@@ -157,6 +166,7 @@ Cost and latency per question (30 questions, `gemini-3.5-flash-lite` free tier):
 - **Tools**: it built the corpus reader and grading pages I used.
 - **Report**: it filled in the factual sections, numbers and tables of this report.
 - **CSV**: it converted my questions to the CSV columns the assignment requires.
+- **q31**: it proposed q31 for the demo, which I approved.
 
 I made the decisions, choosing among options Claude laid out:
 - use case and corpus scope;

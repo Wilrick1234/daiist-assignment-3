@@ -7,7 +7,7 @@
   },
   "agent_model": "gemini-3.5-flash-lite",
   "judge_model": "gemini-3.1-flash-lite",
-  "questions": 30,
+  "questions": 31,
   "retrieval": [
     {
       "design": "article",
@@ -90,7 +90,7 @@
   ],
   "by_type": {
     "all": {
-      "n": 30,
+      "n": 31,
       "mean_correctness": 1.0,
       "mean_support": 1.0,
       "strict_pass": 1.0
@@ -108,7 +108,7 @@
       "strict_pass": 1.0
     },
     "unanswerable": {
-      "n": 6,
+      "n": 7,
       "mean_correctness": 1.0,
       "mean_support": 1.0,
       "strict_pass": 1.0
@@ -124,7 +124,7 @@
   "judge_supported": 1.0,
   "answerable_correct": 1.0,
   "answerable_unsupported": 0,
-  "correct_refusals": 6,
+  "correct_refusals": 7,
   "missed_refusals": 0,
   "wrong_refusals": 0,
   "citations_valid": 1.0,
@@ -149,9 +149,9 @@
     }
   },
   "cost": {
-    "mean_tokens_in": 3401,
-    "mean_tokens_out": 193,
-    "mean_seconds": 3.0,
+    "mean_tokens_in": 3405,
+    "mean_tokens_out": 187,
+    "mean_seconds": 3.1,
     "median_seconds": 2.4,
     "mean_searches": 0.9
   }
