@@ -153,7 +153,17 @@ This disagreement also demonstrates why an automated judge should not be conside
 
 ## Failures
 
-✏️ *Still to add: the template asks for failed questions **by cause, with counts**, using the five causes (retrieval miss, wrong answer from the right passage, unsupported claim, wrong refusal, bad test question). Add one line or a small table with your counts.*
+Failed questions by cause (31 test questions; the demo is listed separately because it is not part of the test set):
+
+| Cause | Count | Questions |
+|---|---|---|
+| Retrieval miss | 0 | every answerable question had an expected passage in the top 5 |
+| Wrong answer from the right passage | 0 | |
+| Unsupported claim | 1 | q21 (Article 22(3) safeguards generalised to all exceptions) |
+| Wrong refusal | 0 | q26, q27 and q30 were refused without a search, but correctly |
+| Bad test question | 0 | |
+| *Outside the test set* | 2 | demo "after" answer: two details not in the CNIL text (unsupported claim); citation check blocked a confirmation (guardrail error, fixed) |
+
 
 Despite the strong evaluation results, I identified several weaknesses that suggest the system is not yet sufficiently reliable for unrestricted real-world use.
 
