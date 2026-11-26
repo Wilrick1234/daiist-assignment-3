@@ -1,8 +1,8 @@
 # Assignment 3 Report
 
-- **Name**: ✏️
-- **Student ID**: ✏️
-- **Group**: ✏️ [BBADBA 5A | BBADBA 5B | PPLEDBA 5A]
+- **Name**: Wilrick Dong
+- **Student ID**: 20426
+- **Group**: BBADBA 5B
 
 ## Use case
 
@@ -78,7 +78,17 @@ AI Act, Article 5 — Prohibited AI practices (part 2 of 7)
 
 Subagent `.claude/agents/corpus-researcher.md` (tools: `mcp__corpus__search` only): it searches with the question, re-searches with the law's own terms (at most four searches), answers in at most six sentences with a citation tag after every claim, replies "The corpus does not cover this question." when the passages do not answer, and never fills gaps from memory, national law or case law.
 
-**Transcript from the editor** ✏️ *(paste here: one question asked through the corpus-researcher subagent in Copilot or Claude Code, with its answer)*
+**Transcript from the editor** (VS Code, Copilot Chat in Agent mode, delegating to the `corpus-researcher` subagent):
+
+> **Me:** Use the corpus-researcher subagent: do we need a DPIA before launching an AI tool that monitors employees?
+>
+> **corpus-researcher:** Yes — usually before launch, if the processing is likely high-risk.
+>
+> As controller, you must carry out a DPIA prior to processing where the processing — in particular using new technologies, and given its nature, scope, context and purposes — is likely to result in a high risk to individuals’ rights and freedoms [GDPR, Article 35]. A DPIA is in particular required for a systematic and extensive evaluation of personal aspects based on automated processing (including profiling) on which decisions are based that produce legal effects or similarly significantly affect the person [GDPR, Article 35]. An AI tool that monitors employees and feeds into decisions that significantly affect them (for example performance evaluation, task allocation, or terms of work) therefore typically triggers that obligation before go-live; if it does not meet the high-risk threshold (and is not on your supervisory authority’s DPIA list), a DPIA is not mandated solely because the tool is AI [GDPR, Article 35].
+>
+> Separately, AI systems intended to monitor and evaluate the performance and behaviour of persons in work-related relationships are listed as high-risk (unless an Article 6(3) derogation applies; systems that perform profiling remain high-risk) [AI Act, Annex III]; [AI Act, Article 6]. Where a GDPR DPIA applies, deployers of high-risk AI systems must use the provider’s information to comply with that DPIA duty [AI Act, Article 26]. That GDPR DPIA is distinct from the AI Act fundamental-rights impact assessment, which applies only to specified deployers (mainly public bodies/public services and certain Annex III point 5 uses), not automatically to every private employer using workplace-monitoring AI [AI Act, Article 27].
+>
+> (Answer from corpus-researcher.)
 
 ## Adding a document
 
@@ -88,8 +98,8 @@ Subagent `.claude/agents/corpus-researcher.md` (tools: `mcp__corpus__search` onl
 
 - **Unanswerable question q31**: "We're launching a cookie banner in France. Does the French regulator require refusing cookies to be as easy as accepting them?" The corpus requires consent for cookies (ePrivacy, Article 5(3)) and makes *withdrawing* consent as easy as giving it (GDPR, Article 7(3)), but says nothing about the French regulator or the *refuse* option.
 - **Before**: one search ("cookie banner refuse easy accept France ePrivacy GDPR"), then "The corpus does not cover this question."
-- **Document added**: the CNIL's news item of 14 December 2021, "Refusing cookies should be as easy as accepting them: the CNIL continues its action and issues new orders", saved as `extra_docs/CNIL_cookie_refusal_2021.md`. The agent asked `Approve? [y/N]`, I answered `y`, and 2 chunks were embedded. Asked to add it a second time, the tool embedded nothing and said it was already in the index.
-- **After**: "Yes. The French data protection regulator (the CNIL) actively enforces the requirement that refusing cookies must be as easy as accepting them [CNIL cookie refusal 2021, § Refusing cookies should be as easy as accepting them…]", followed by the CNIL's findings (cookies set before consent, refusal not effective) and the possible fines of up to 2% of annual worldwide turnover, all cited to the new document.
+- **Document added**: the CNIL's news item of 14 December 2021, "Refusing cookies should be as easy as accepting them: the CNIL continues its action and issues new orders", saved as `extra_docs/CNIL_cookie_refusal_2021.md`. The harness asked `Approve? [y/N]`, the demo run answered `y`, and 2 chunks were embedded. Asked to add it a second time, the tool embedded nothing and said it was already in the index.
+- **After**: "Yes. The French data protection regulator (the CNIL) actively enforces the requirement that refusing cookies must be as easy as accepting them [CNIL cookie refusal 2021, § Refusing cookies should be as easy as accepting them…]", followed by three points (refusing must be as easy and visible as accepting, the refusal must actually stop the cookies, and fines can reach 2% of annual worldwide turnover), all cited to the new document. Two details in it are not in the CNIL text (see Failures).
 
 ## Harness and guardrails
 
@@ -238,7 +248,8 @@ I used Claude (Anthropic) throughout:
 - **Tools**: it built the corpus reader and grading pages I used.
 - **Report**: it filled in the factual sections, numbers and tables of this report.
 - **CSV**: it converted my questions to the CSV columns the assignment requires.
-- **q31**: it proposed q31 for the demo, which I approved.
+- **q31**: it proposed q31 for the demo, which I approved, and ran the demo.
+- **Assembly**: it placed my sections and my editor transcript into this file, and compiled the failure-count table from my analysis.
 
 I made the decisions, choosing among options Claude laid out:
 - use case and corpus scope;
