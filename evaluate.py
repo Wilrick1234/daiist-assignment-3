@@ -10,7 +10,7 @@ Assignment 3: evaluation (`main.py evaluate`).
 4. LLM judge with the rubric in eval/rubric.md and the retrieved text as
    evidence (saved to eval/judge.jsonl).
 5. Agreement between the judge and eval/human_labels.csv.
-6. Summary in eval/summary.json and eval/summary.md; per-question rows in
+6. Summary in eval/summary.json (with the rubric's aggregates); per-question rows in
    eval/results.csv; failures to classify in eval/failures.csv.
 
     python evaluate.py                    # everything (default for main.py evaluate)
@@ -166,6 +166,7 @@ def code_checks(q: dict, a: dict) -> dict:
         "refused": int(refused),
         "should_refuse": int(should_refuse),
         "refusal_correct": int(refused == should_refuse),
+        "refusal_exact": int(a["answer"].strip() == REFUSAL),
         "n_citations": len(cited),
         "citations_valid": "" if refused else int(check_citations(a["answer"], retrieved) is None),
         "cites_expected": "" if should_refuse else int(any(c in q["expected"] for c in cited)),
@@ -190,9 +191,12 @@ def judge_prompt(rubric: str, q: dict, a: dict) -> str:
 RUBRIC (follow it exactly):
 {rubric}
 
-QUESTION ({q['kind']}): {q['question']}
+QUESTION TYPE: {q['kind']}
+QUESTION: {q['question']}
 
-REFERENCE ANSWER: {q['reference_answer']}
+EXPECTED ANSWER: {q['reference_answer']}
+
+EXPECTED SOURCE LOCATIONS: {q.get('original_location') or q['expected_location'] or '(none: unanswerable)'}
 
 RETRIEVED PASSAGES (everything the assistant saw):
 {evidence(a)}
@@ -200,7 +204,7 @@ RETRIEVED PASSAGES (everything the assistant saw):
 ASSISTANT'S ANSWER:
 {a['answer']}
 
-Return JSON with: correct (1 or 0), supported (1 or 0), reason (one or two sentences)."""
+Return JSON with: correctness (1 or 0), supported (1 or 0), reason (brief)."""
 
 
 def run_judge(questions: list[dict], answers: dict[str, dict], fresh: bool) -> dict[str, dict]:
@@ -214,7 +218,7 @@ def run_judge(questions: list[dict], answers: dict[str, dict], fresh: bool) -> d
     rubric = RUBRIC.read_text(encoding="utf-8").strip()
 
     class Verdict(BaseModel):
-        correct: int = Field(description="1 if the answer is correct per the rubric, else 0")
+        correctness: int = Field(description="1 if the answer is correct per the rubric, else 0")
         supported: int = Field(description="1 if every claim is backed by the retrieved passages, else 0")
         reason: str = Field(description="One or two sentences explaining the grades")
 
@@ -232,7 +236,7 @@ def run_judge(questions: list[dict], answers: dict[str, dict], fresh: bool) -> d
             except Exception as error:  # noqa: BLE001
                 log(f"  {q['id']}: judge ERROR {type(error).__name__}: {error}")
                 continue
-            row = {"id": q["id"], "correct": int(v.correct), "supported": int(v.supported), "reason": v.reason, "model": JUDGE_MODEL}
+            row = {"id": q["id"], "correct": int(v.correctness), "supported": int(v.supported), "reason": v.reason, "model": JUDGE_MODEL}
             append_jsonl(JUDGE, row)
             saved[q["id"]] = row
             time.sleep(PAUSE / 2)
@@ -348,6 +352,18 @@ def main() -> None:
         vals = [r[key] for r in rows if r[key] != ""]
         return round(sum(vals) / len(vals), 3) if vals else None
 
+    def by_type(rows):
+        out = {}
+        for kind in ("all", "single", "multi", "unanswerable", "answerable"):
+            sub = [r for r in rows if kind == "all" or r["kind"] == kind or (kind == "answerable" and r["kind"] != "unanswerable")]
+            graded = [r for r in sub if r["judge_correct"] != ""]
+            if graded:
+                out[kind] = {"n": len(graded),
+                             "mean_correctness": round(sum(r["judge_correct"] for r in graded) / len(graded), 3),
+                             "mean_support": round(sum(r["judge_supported"] for r in graded) / len(graded), 3),
+                             "strict_pass": round(sum(r["judge_correct"] == 1 and r["judge_supported"] == 1 for r in graded) / len(graded), 3)}
+        return out
+
     answerable = [r for r in results if not r["should_refuse"]]
     unanswerable = [r for r in results if r["should_refuse"]]
     summary = {
@@ -356,6 +372,7 @@ def main() -> None:
         "judge_model": JUDGE_MODEL,
         "questions": len(results),
         "retrieval": retrieval_rows,
+        "by_type": by_type(results),
         "judge_correct": share(results, "judge_correct"),
         "judge_supported": share(results, "judge_supported"),
         "answerable_correct": share(answerable, "judge_correct"),

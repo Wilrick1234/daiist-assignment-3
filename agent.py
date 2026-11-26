@@ -207,7 +207,7 @@ class Agent:
             problem = check_citations(answer, retrieved)
             if problem:
                 self.events.append({"guardrail": "citation_check", "attempt": 2, "problem": problem, "replaced": answer})
-                answer = f"{REFUSAL} (The draft answer was withheld because its citations could not be verified.)"
+                answer = REFUSAL   # the withheld draft stays in the trace (events)
 
         trace, tokens_in, tokens_out = [], 0, 0
         for m in result["messages"]:
