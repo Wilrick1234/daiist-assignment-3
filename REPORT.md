@@ -248,15 +248,6 @@ I used Claude (Anthropic) throughout:
 - **Tools**: it built the corpus reader and grading pages I used.
 - **Report**: it filled in the factual sections, numbers and tables of this report.
 - **CSV**: it converted my questions to the CSV columns the assignment requires.
-- **q31**: it proposed q31 for the demo, which I approved, and ran the demo.
 - **Assembly**: it placed my sections and my editor transcript into this file, and compiled the failure-count table from my analysis.
-
-I made the decisions, choosing among options Claude laid out:
-- use case and corpus scope;
-- the two designs to compare and the rule for picking one;
-- the duplicate-document policy;
-- the citation-check guardrail.
-
-I wrote the test questions, the `AGENTS.md` rules, the judge rubric, my grades, the failure analysis and the decision.
 
 I used generative AI to review the accuracy, completeness, structure and clarity of my report. AI also helped me articulate the limitations identified during the evaluation and organize my failure analysis. The technical results are based on the project experiments and evaluation, while the final assessment and deployment decision reflect my own judgment.
